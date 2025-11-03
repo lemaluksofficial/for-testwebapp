@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>My WebApp</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <h1>Привет из WebApp!</h1>
+  <input type="text" id="input" placeholder="Напиши что-нибудь">
+  <button id="send">Отправить боту</button>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    document.getElementById("send").addEventListener("click", () => {
+      const text = document.getElementById("input").value;
+      tg.sendData(text); // отправляем данные боту
+    });
+  </script>
+</body>
+</html>
