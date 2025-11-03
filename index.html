@@ -2,11 +2,32 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>My WebApp</title>
+  <title>My WebApp Auth</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      background-color: var(--tg-theme-bg-color);
+      color: var(--tg-theme-text-color);
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    input {
+      padding: 8px;
+      font-size: 16px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 16px;
+      margin-left: 5px;
+    }
+  </style>
 </head>
 <body>
   <h1>Привет из WebApp!</h1>
+
+  <div id="user"></div>
+
   <input type="text" id="input" placeholder="Напиши что-нибудь">
   <button id="send">Отправить боту</button>
 
@@ -14,9 +35,21 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
+    // Получаем данные пользователя
+    const user = tg.initDataUnsafe?.user;
+    if (user) {
+      document.getElementById("user").innerHTML = `
+        <p>👤 ${user.first_name} ${user.last_name || ""} (@${user.username || "нет username"})</p>
+        <p>ID: ${user.id}</p>
+      `;
+    } else {
+      document.getElementById("user").innerHTML = "<p>Не удалось получить данные пользователя 😔</p>";
+    }
+
+    // Кнопка "Отправить"
     document.getElementById("send").addEventListener("click", () => {
       const text = document.getElementById("input").value;
-      tg.sendData(text); // отправляем данные боту
+      tg.sendData(text);
     });
   </script>
 </body>
