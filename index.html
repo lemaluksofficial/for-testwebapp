@@ -9,14 +9,14 @@
 
     // === ⚙️ НАСТРОЙ СВОЙ SUPABASE ===
     const SUPABASE_URL = 'https://tsraoebwshnxpngxtpzz.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzcmFvZWJ3c2hueHBuZ3h0cHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NDU1NzcsImV4cCI6MjA3NTIyMTU3N30.pNKU8mf_y3ncmPa5LTAEE28uTeGVGzxli8gcHWDQ-sc'; // из Project Settings → API → anon public
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzcmFvZWJ3c2hueHBuZ3h0cHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NDU1NzcsImV4cCI6MjA3NTIyMTU3N30.pNKU8mf_y3ncmPa5LTAEE28uTeGVGzxli8gcHWDQ-sc';
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const tg = window.Telegram.WebApp;
     tg.expand();
-
     const user = tg.initDataUnsafe?.user;
 
+    // При загрузке страницы
     window.addEventListener('DOMContentLoaded', () => {
       const info = document.getElementById('info');
       if (user) {
@@ -28,9 +28,13 @@
         info.innerHTML = '<i>Не удалось получить данные пользователя 😔</i>';
       }
 
+      const input = document.getElementById('input');
       const sendBtn = document.getElementById('send');
+      const loadBtn = document.getElementById('load');
+      const list = document.getElementById('list');
+
+      // 📩 Отправка нового сообщения
       sendBtn.addEventListener('click', async () => {
-        const input = document.getElementById('input');
         const text = input.value.trim();
         if (!text) {
           alert('Введите сообщение');
@@ -46,11 +50,37 @@
         ]);
 
         if (error) {
-          alert('Ошибка: ' + error.message);
+          alert('Ошибка при сохранении: ' + error.message);
         } else {
           tg.showAlert('✅ Сообщение сохранено!');
           input.value = '';
         }
+      });
+
+      // 📚 Загрузка всех сообщений
+      loadBtn.addEventListener('click', async () => {
+        list.innerHTML = '<p><i>Загрузка...</i></p>';
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          list.innerHTML = `<p style="color:red;">Ошибка: ${error.message}</p>`;
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          list.innerHTML = '<p><i>Сообщений пока нет 😔</i></p>';
+          return;
+        }
+
+        list.innerHTML = data.map(m => `
+          <div class="msg">
+            <b>@${m.username || 'anon'}</b>: ${m.message}<br>
+            <small>${new Date(m.created_at).toLocaleString()}</small>
+          </div>
+        `).join('');
       });
     });
   </script>
@@ -67,21 +97,38 @@
     h1 {
       margin-top: 20px;
     }
-    #input {
+    input {
       padding: 8px;
       width: 60%;
       font-size: 16px;
     }
-    #send {
+    button {
       padding: 8px 14px;
       font-size: 16px;
+      margin: 5px;
+    }
+    #list {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .msg {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
     }
   </style>
 </head>
 <body>
   <h1>📨 Привет из WebApp!</h1>
   <p id="info">Загрузка...</p>
+
   <input id="input" type="text" placeholder="Введите сообщение">
+  <br>
   <button id="send">Отправить</button>
+  <button id="load">Показать все сообщения</button>
+
+  <div id="list"></div>
 </body>
 </html>
