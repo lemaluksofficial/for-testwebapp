@@ -1,56 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>My WebApp Auth</title>
+  <title>Telegram WebApp + Supabase</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // === ⚙️ НАСТРОЙ СВОЙ SUPABASE ===
+    const SUPABASE_URL = 'https://tsraoebwshnxpngxtpzz.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzcmFvZWJ3c2hueHBuZ3h0cHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NDU1NzcsImV4cCI6MjA3NTIyMTU3N30.pNKU8mf_y3ncmPa5LTAEE28uTeGVGzxli8gcHWDQ-sc'; // из Project Settings → API → anon public
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const user = tg.initDataUnsafe?.user;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const info = document.getElementById('info');
+      if (user) {
+        info.innerHTML = `
+          👤 <b>${user.first_name} ${user.last_name || ''}</b> (@${user.username || 'нет username'})<br>
+          🆔 <i>${user.id}</i>
+        `;
+      } else {
+        info.innerHTML = '<i>Не удалось получить данные пользователя 😔</i>';
+      }
+
+      const sendBtn = document.getElementById('send');
+      sendBtn.addEventListener('click', async () => {
+        const input = document.getElementById('input');
+        const text = input.value.trim();
+        if (!text) {
+          alert('Введите сообщение');
+          return;
+        }
+
+        const { error } = await supabase.from('messages').insert([
+          {
+            user_id: user?.id || null,
+            username: user?.username || null,
+            message: text,
+          }
+        ]);
+
+        if (error) {
+          alert('Ошибка: ' + error.message);
+        } else {
+          tg.showAlert('✅ Сообщение сохранено!');
+          input.value = '';
+        }
+      });
+    });
+  </script>
+
   <style>
     body {
+      font-family: sans-serif;
       background-color: var(--tg-theme-bg-color);
       color: var(--tg-theme-text-color);
-      font-family: sans-serif;
       text-align: center;
+      margin: 0;
       padding: 20px;
     }
-    input {
+    h1 {
+      margin-top: 20px;
+    }
+    #input {
       padding: 8px;
+      width: 60%;
       font-size: 16px;
     }
-    button {
-      padding: 8px 16px;
+    #send {
+      padding: 8px 14px;
       font-size: 16px;
-      margin-left: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>Привет из WebApp!</h1>
-
-  <div id="user"></div>
-
-  <input type="text" id="input" placeholder="Напиши что-нибудь">
-  <button id="send">Отправить боту</button>
-
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    // Получаем данные пользователя
-    const user = tg.initDataUnsafe?.user;
-    if (user) {
-      document.getElementById("user").innerHTML = `
-        <p>👤 ${user.first_name} ${user.last_name || ""} (@${user.username || "нет username"})</p>
-        <p>ID: ${user.id}</p>
-      `;
-    } else {
-      document.getElementById("user").innerHTML = "<p>Не удалось получить данные пользователя 😔</p>";
-    }
-
-    // Кнопка "Отправить"
-    document.getElementById("send").addEventListener("click", () => {
-      const text = document.getElementById("input").value;
-      tg.sendData(text);
-    });
-  </script>
+  <h1>📨 Привет из WebApp!</h1>
+  <p id="info">Загрузка...</p>
+  <input id="input" type="text" placeholder="Введите сообщение">
+  <button id="send">Отправить</button>
 </body>
 </html>
